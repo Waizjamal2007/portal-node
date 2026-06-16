@@ -26,23 +26,35 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// ========== MIDDLEWARE ==========
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-}));
+// ========== MIDDLEWARE (CORS FIXED FOR VERCEL) ==========
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "https://nexorastudentportal.vercel.app");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.header("Access-Control-Allow-Credentials", "true");
+    
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// ========== MONGODB CONNECTION ==========
-mongoose.connect('mongodb://localhost:27017/nexora_portal')
+// ========== MONGODB CONNECTION (FIXED FOR ENV / ATLAS) ==========
+// Yahan .env file se MONGODB_URI uthayega jo humne set ki hai
+const dbURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/nexora_portal';
+
+mongoose.connect(dbURI)
   .then(() => {
     console.log('✅ MongoDB Connected Successfully');
-    initializeDatabase();
+    if (typeof initializeDatabase === 'function') {
+      initializeDatabase();
+    }
   })
   .catch(err => {
     console.error('❌ MongoDB Connection Error:', err.message);
-    console.log('💡 Make sure MongoDB is running. Start it with: mongod');
   });
 
 // ========== SCHEMAS ==========
